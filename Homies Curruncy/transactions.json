@@ -1,0 +1,44 @@
+[
+    {
+        "type": "credit",
+        "amount": 0,
+        "message": "testing",
+        "sr_no": 1
+    },
+    {
+        "type": "credit",
+        "amount": 40,
+        "message": "dormanor special role",
+        "sr_no": 2
+    },
+    {
+        "type": "credit",
+        "amount": 55,
+        "message": "bill special role",
+        "sr_no": 3
+    },
+    {
+        "type": "credit",
+        "amount": 5,
+        "message": "extra from bill for manage role",
+        "sr_no": 4
+    },
+    {
+        "type": "debit",
+        "amount": 50,
+        "message": "BARNEY for tournament",
+        "sr_no": 5
+    },
+    {
+        "type": "credit",
+        "amount": 5,
+        "message": "for testing",
+        "sr_no": 6
+    },
+    {
+        "type": "debit",
+        "amount": 5,
+        "message": "for testing",
+        "sr_no": 7
+    }
+]

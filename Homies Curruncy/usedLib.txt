@@ -1,0 +1,5 @@
+aiohttp
+google-generativeai
+discord.py
+groq
+mysql-connector-python
