@@ -37,10 +37,10 @@ blocked_users = {}  # Dictionary to keep track of blocked users and their unbloc
 spam_users = {}  # Dictionary to keep track of spam warnings
 # Setup API keys for rotation
 api_keys = [
-    "AIzaSyA5dTvJDfmmUkQdFz1CYikzX2x0AmF8Ueo",
-    "AIzaSyCS_MMYtXClAftcp5eTktMBZ1l-1m4-wo4",
-    "yAIzaSyD2xoDSTq8ptIZF6Cix5sj3FK98FjCqtYo",
-    "AIzaSyD2xoDSTq8ptIZF6Cix5sj3FK98FjCqtYo",
+    "2x0AmF8Ueo",
+    "l-1m4-wo4",
+    "K98FjCqtYo",
+    "FjCqtYo",
    
     # Add more keys as needed
 ]
