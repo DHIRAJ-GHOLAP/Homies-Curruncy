@@ -7,8 +7,9 @@ reseting role ids on last claim
 
 import os
 #os.system("pip install aiohttp")
-os.system("pip install -r usedLib.txt")
+os.system("pip install google-generativeai")
 import google.generativeai as genai
+
 import discord
 import aiohttp
 import config
@@ -36,10 +37,10 @@ blocked_users = {}  # Dictionary to keep track of blocked users and their unbloc
 spam_users = {}  # Dictionary to keep track of spam warnings
 # Setup API keys for rotation
 api_keys = [
-    "key",
-    "key-1m4-wo4",
-    "key",
-    "key",
+    "2x0AmF8Ueo",
+    "l-1m4-wo4",
+    "K98FjCqtYo",
+    "FjCqtYo",
    
     # Add more keys as needed
 ]
@@ -107,7 +108,21 @@ admin_password = "00homies00"
 log_channel_id = 1264048288743690331
 del_channel_id = 1266303464279904337 # Replace with your log channel ID
 block_user_1 = [1262767761659138070] ## Add zero in last 
+DATA_FILE = 'data.json'
 # Load or initialize the data from JSON file
+roles = {
+    "block": {"cost": 1000, "id": 123456789012345678},
+    "gif": {"cost": 500, "id": 1228094136255647865},
+    "VIP": {"cost": 5000, "id": 1237406055147900929},
+    "Audit": {"cost": 3000, "id": 1263845122932740169},
+    "Mute": {"cost": 3500, "id": 1263845384661372949},
+    "Move": {"cost": 3000, "id": 1263845699842215956},
+    "Timeout": {"cost": 70000, "id": 1263846234456592493},
+    "Staff": {"cost": 10000, "id": 1238105061943414784},
+    "omute": {"cost": 300, "id": 4136255647865}
+}
+
+
 
 ######################### SQL TESTING #####################
 
@@ -150,7 +165,7 @@ def calculate_total_amount():
 
 # Function to write to MySQL
 def write_to_mysql(transaction):
-    connection = mysql.connector.connect(**config.db_config)
+    connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor()
 
     query = "INSERT INTO transactions (type, amount, message) VALUES (%s, %s, %s)"
@@ -176,7 +191,7 @@ def read_from_json(sr_no):
 
 # Function to read from MySQL
 def read_from_mysql(sr_no):
-    connection = mysql.connector.connect(**config.db_config)
+    connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
 
     query = "SELECT * FROM transactions WHERE id = %s"
@@ -545,6 +560,11 @@ async def on_message(message):
     # Increment HC for each message
     data[user_id]['HC'] += 1
     save_data(data)
+    
+    # Increment HC
+    user_cache[user_id]['HC'] += 1
+    update_user_cache(user_id, user_cache[user_id])
+    
 
     # Ignore Tenor GIFs
     if any(
@@ -989,6 +1009,25 @@ async def warn_error(ctx, error):
 
 
 
+# Load data from file
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+# Save data to file
+def save_data(data):
+    with open(DATA_FILE, 'w') as f:
+        json.dump(data, f, indent=4)
+
+# Initialize user cache
+user_cache = load_data()
+
+# Update user cache function
+def update_user_cache(user_id, new_data):
+    user_cache[user_id] = new_data
+    save_data(user_cache)
 
 @bot.command()
 async def stats(ctx):
@@ -1033,170 +1072,81 @@ async def userinfo(ctx, member: discord.Member = None):
 
 @bot.event
 async def on_member_update(before, after):
-    global user_cache
-    # Update user_cache if necessary when member updates
-    pass
+    user_id = str(after.id)
+    if user_id in user_cache:
+        # Update user cache with new data
+        user_cache[user_id]['username'] = str(after)
+        update_user_cache(user_id, user_cache[user_id])
 
-# Don't forget to save the cache when needed
-def update_user_cache(user_id, new_data):
-    user_cache[user_id] = new_data
-    save_data(user_cache)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
 @bot.command()
-async def roles(ctx, help_command: str = None):
-    if help_command == "help":
-        help_text = (
-            "Shop Commands:\n"
-            "+buy <role_name> - Purchase a role with your HC.\n"
-            "Available roles and HC:\n"
-            "1. VIP role - 1000 HC\n"
-            "2. Audit log check - 3000 HC\n"
-            "3. Mute member in VC - 3500 HC\n"
-            "4. Move permissions - 3000 HC\n"
-            "5. Timeout member - 70000 HC\n"
-            "6. Staff role - 4000 HC\n"
-            "7. One time mute - 300HC \n"
-            "8. GIF Access - 500HC\n"
-             "9. Block user - 1000HC\n"
-            "You can only use the commands with roles you have enough HC for."
-        )
-        await ctx.send(help_text)
-        return
-
-
-    roles_info = (
-        "Roles and HC Requirements:\n"
-        "1. VIP role - 1000 HC\n"
-        "2. Audit log check - 3000 HC\n"
-        "3. Mute member in VC - 3500 HC\n"
-        "4. Move permissions - 3000 HC\n"
-        "5. Timeout member - 70000 HC\n"
-        "6. One time mute - 300HC \n"
-        "7. Staff role - 4000 HC\n"
-        "8. GIF Acces - 500 HC\n"
-         "9. Block user - 1000HC\n"
-        "Use +shop to view and spend your HC."
-    )
-    await ctx.send(roles_info)
-
-@bot.command()
-async def shop(ctx, help_command: str = None):
+async def shop(ctx):
     data = load_data()
     user_id = str(ctx.author.id)
     user_HC = data.get(user_id, {}).get('HC', 0)
-
-    if help_command == "help":
-        help_text = (
-            "Shop Commands:\n"
-            "+buy <role_name> - Purchase a role with your HC.\n"
-            "Available roles and HC:\n"
-            "1. VIP role - 1000 HC\n"
-            "2. Audit log check - 3000 HC\n"
-            "3. Mute member in VC - 3500 HC\n"
-            "4. Move permissions - 3000 HC\n"
-            "5. Timeout member - 70000 HC\n"
-            "6. Staff role - 4000 HC\n"
-            "7. One time mute - 300HC \n"
-            "8. GIF Acces - 500HC\n"
-            "9. Block user - 1000HC\n"
-            "You can only use the commands with roles you have enough HC for."
-        )
-        await ctx.send(help_text)
-        return
-
-    available_roles = {
-        "block":1000,
-        "omute": 300,
-        "gif": 500,
-        "vip": 1000,
-        "audit": 3000,
-        "mute": 3500,
-        "move": 3000,
-        "timeout": 70000,
-        "staff": 5000
-    }
-
-    roles_info = "Welcome to the shop+\n"
-    roles_info += f"Your current HC: {user_HC}\n"
-
-    for role, cost in available_roles.items():
+  
+    roles_info = "Available roles in the shop:\n"
+    for role_name, role_data in roles.items():
+        cost = role_data["cost"]
         if user_HC >= cost:
-            roles_info += f"{role} - {cost} HC\n"
-
-    roles_info += "Use +buy <role> to purchase a role."
+            roles_info += f"{role_name} - {cost} HC (You can afford this)\n"
+        #else:
+           # roles_info += f"{role_name} - {cost} HC (You cannot afford this)\n"
 
     try:
         await ctx.send(roles_info)
     except discord.Forbidden:
         await ctx.send("I don't have permission to send messages in this channel.")
 
-from datetime import datetime, timezone
-'''
-@bot.command()
-async def daily(ctx):
-    data = load_data()
-    user_id = str(ctx.author.id)
-    now = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-
-    # Check if the user is registered
-    if user_id not in data:
-        data[user_id] = {'username': str(ctx.author), 'HC': 0, 'last_claim': now}
-        save_data(data)
-
-    user_data = data[user_id]
-    last_claim = user_data.get('last_claim', None)
-
-    if last_claim == now:
-        # User has already claimed their daily bonus today
-        embed = discord.Embed(
-            title="Daily Bonus",
-            description="You have already claimed your daily bonus for today.",
-            color=discord.Color.red()
-        )
-    else:
-        # User hasn't claimed their daily bonus today
-        daily_bonus = 0  # Set the daily bonus HC
-        user_data['HC'] += daily_bonus
-        user_data['last_claim'] = now
-        save_data(data)
-
-        embed = discord.Embed(
-            title="Daily Bonus",
-            description=f"You have received {daily_bonus} HC!",
-            color=discord.Color.green()
-        )
-
-    await ctx.send(embed=embed)   
-'''
+        
+        
+        
+        
+        
+        
+        
 @bot.command()
 async def allshop(ctx):
-    data = load_data()
+    data = load_data()  # Load user data
     user_id = str(ctx.author.id)
     user_HC = data.get(user_id, {}).get('HC', 0)
 
-    available_roles = {
-        "block":1000,
-        "gif" : 500,
-        "VIP": 1000,
-        "Audit": 3000,
-        "Mute": 3500,
-        "Move": 3000,
-        "Timeout": 70000,
-        "Staff": 4000,
-        "omute":300
-
-    }
-
-    roles_info = "All available roles:\n"
-    for role, cost in available_roles.items():
+    roles_info = f"Your current HC: {user_HC}\nAll available roles:\n"
+    for role_name, role_data in roles.items():
+        cost = role_data["cost"]
         if user_HC >= cost:
-            roles_info += f"{role} - {cost} HC (You can afford this )\n"
+            roles_info += f"{role_name} - {cost} HC (You can afford this)\n"
         else:
-            roles_info += f"{role} - {cost} HC (You cannot afford this )\n"
+            roles_info += f"{role_name} - {cost} HC (You cannot afford this)\n"
+      
 
     try:
         await ctx.send(roles_info)
+        await ctx.send("Ask me if u want information about any role and there permission")
     except discord.Forbidden:
         await ctx.send("I don't have permission to send messages in this channel.")
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 @bot.command()
 async def buy(ctx, role_name: str):
     data = load_data()
@@ -1209,84 +1159,54 @@ async def buy(ctx, role_name: str):
 
     HC = data[user_id]['HC']
 
-    # Define roles with their corresponding HC values
-    roles = {
-        "block":1000,
-        "gif" : 500,
-        "vip": 1000,
-        "audit": 3000,
-        "mute": 3500,
-        "move": 3000,
-        "timeout": 70000,
-        "staff": 4000,
-        "omute": 300
-    }
-
-    # Convert role name to lowercase for matching
-    role_name_lower = role_name.lower()
-    role_value = roles.get(role_name_lower)
-
-    # Check if user already has the role
-    role = discord.utils.get(ctx.guild.roles, name=role_name)
-    if role in ctx.author.roles:
-        await ctx.send(f"You already have the {role_name} role.")
-        return
+    # Normalize the role name to lowercase for matching
+    role_name_normalized = role_name.lower()
+    
+    # Create a dictionary with lowercase keys for case-insensitive matching
+    roles_lower = {key.lower(): value for key, value in roles.items()}
 
     # Check if role name is valid
-    if role_value is None:
+    role_data = roles_lower.get(role_name_normalized)
+
+    if role_data is None:
         valid_roles = ", ".join(roles.keys())
         await ctx.send(f"Invalid role name. Available roles are: {valid_roles}")
         return
 
+    role_cost = role_data["cost"]
+    role_id = role_data["id"]
+
     # Check if user has enough HC
-    if HC < role_value:
+    if HC < role_cost:
         await ctx.send(f"You don't have enough HC to buy the {role_name}.")
         return
 
-    # Directly find the role by ID
-    role_ids = {
-        "vip": 1237406055147900929,  # Replace with actual role IDs
-        "audit": 1263845122932740169,
-        "mute": 1263845384661372949,
-        "move": 1263845699842215956,
-        "timeout": 1263846234456592493,
-        "staff": 1238105061943414784,
-        "gif" : 1228094136255647865
-    }
-    role_id = role_ids.get(role_name_lower)
+    # Check if user already has the role
     role = ctx.guild.get_role(role_id)
-
-    if role is None:
-        await ctx.send("Role not found.")
+    if role in ctx.author.roles:
+        await ctx.send(f"You already have the {role_name} role.")
         return
 
     # Deduct HC and update data
-    data[user_id]['HC'] -= role_value
+    data[user_id]['HC'] -= role_cost
     save_data(data)
 
     # Notify admin
     admin_channel = bot.get_channel(log_channel_id)
     if admin_channel:
-        await admin_channel.send(f"User {ctx.author} requested role: {role_name}. HC deducted: {role_value}")
+        await admin_channel.send(f"User {ctx.author} requested role: {role_name}. HC deducted: {role_cost}")
 
-    # Notify user
-    await ctx.send(f"Your purchase request for the role '{role_name}' is being processed. The role will be assigned within 24 hours.")
-
-    # Optionally, assign the role to the user directly
+    # Assign the role to the user
     try:
         await ctx.author.add_roles(role)
         await ctx.send(f'Congratulations {ctx.author.mention}! You have purchased the {role_name} role.')
         print(f'{ctx.author.mention} has been assigned the {role_name} role.')
-        await log_transaction(f'{ctx.author.mention} purchased the {role_name} role for {role_value} HC.')
+        await log_transaction(f'{ctx.author.mention} purchased the {role_name} role for {role_cost} HC.')
     except discord.Forbidden:
         await ctx.send("I don't have permission to assign roles.")
     except discord.HTTPException as e:
         await ctx.send(f"An error occurred while assigning the role: {e}")
-        
-        
-        
-        
-        
+
         
         
         
@@ -1429,32 +1349,43 @@ async def setHC_error(ctx, error):
         await ctx.send(f"An error occurred: {error}")
 
 user_rank = list()
-
 @bot.command()
 async def top(ctx, amount: int):
-    if amount >= 31:
+    # Define roles to filter out (e.g., "headmod")
+    roles_to_exclude = ["HEAD MOD"]
+    minus_r = len(roles_to_exclude)+1
+    amount+=minus_r
+
+    if amount >= 29:
         await ctx.send(f"Seems like you want to see {amount} top users. Why not just view all the user data? Jhantu kahika soja bsdk")
-    else:
-        data = load_data()
-        sorted_users = sorted(data.items(), key=lambda x: x[1].get('HC', 0), reverse=True)[:amount]
+        return
 
-        leaderboard_lines = []
-        for rank, (user_id, user_data) in enumerate(sorted_users, start=1):
-            user = await bot.fetch_user(int(user_id))
-            leaderboard_lines.append(f"{rank}. {user.mention} - {user_data.get('HC', 0)} HC")
+    data = load_data()
+    sorted_users = sorted(data.items(), key=lambda x: x[1].get('HC', 0), reverse=True)[:amount]
 
-        leaderboard = "\n".join(leaderboard_lines)
+    leaderboard_lines = []
 
-        embed = discord.Embed(title=f"Top {amount} Users by HC", color=discord.Color.red())
-        embed.add_field(name="User", value=leaderboard, inline=False)
+    for rank, (user_id, user_data) in enumerate(sorted_users, start=1):
+        user = await bot.fetch_user(int(user_id))
+        member = ctx.guild.get_member(int(user_id))
 
-        await ctx.send(embed=embed)
-    
-    
+        # Check if the user has any of the roles to exclude
+        if member and any(role.name.lower() in [r.lower() for r in roles_to_exclude] for role in member.roles):
+            continue  # Skip users with the roles to exclude
+
+        leaderboard_lines.append(f"{rank-minus_r}. {user.mention} - {user_data.get('HC', 0)} HC")
+
+    leaderboard = "\n".join(leaderboard_lines)
+
+    embed = discord.Embed(title=f"Top {amount-minus_r} Users by HC", color=discord.Color.red())
+    embed.add_field(name="User", value=leaderboard, inline=False)
+
+    await ctx.send(embed=embed)
+
     # Use logging instead of print for better control
     import logging
     logging.info("LEADERBOARD command executed")
-    
+
     
 
 
@@ -1475,7 +1406,7 @@ async def block(ctx,name:discord.Member):
     duration = 600
     if user_HC < 1000:
         embed = discord.Embed(title="You are poor", color=discord.Color.red())
-        embed.add_field(name="User", value=member.mention, inline=True)# type: ignore
+        embed.add_field(name="User", value=member.mention, inline=True)
         embed.add_field(name="Aww", value="You don't have enough HC", inline=True)
         await ctx.send(embed=embed)
         return
@@ -1487,25 +1418,25 @@ async def block(ctx,name:discord.Member):
 
     save_data(data)
 
-    await log_transaction(f"{ctx.author.mention} has purchased the Temporary block for {member.mention}.")# type: ignore
+    await log_transaction(f"{ctx.author.mention} has purchased the Temporary block for {member.mention}.")
 
     guild = ctx.guild
     for channel in guild.channels:
-        await channel.set_permissions(member, send_messages=False, speak=False)# type: ignore
+        await channel.set_permissions(member, send_messages=False, speak=False)
 
     embed = discord.Embed(title="User Blocked", color=discord.Color.red())
-    embed.add_field(name="User", value=member.mention, inline=True)# type: ignore
+    embed.add_field(name="User", value=member.mention, inline=True)
     embed.add_field(name="Duration", value=f"{duration} seconds", inline=True)
-    embed.add_field(name="Reason", value=reason if reason else "No reason provided", inline=True)# type: ignore
+    embed.add_field(name="Reason", value=reason if reason else "No reason provided", inline=True)
     await ctx.send(embed=embed)
 
     await asyncio.sleep(duration)
 
     for channel in guild.channels:
-        await channel.set_permissions(member, send_messages=None, speak=None) # type: ignore
+        await channel.set_permissions(member, send_messages=None, speak=None)
 
     embed = discord.Embed(title="User Unblock", color=discord.Color.green())
-    embed.add_field(name="User", value=member.mention, inline=True) # type: ignore
+    embed.add_field(name="User", value=member.mention, inline=True)
     await ctx.send(embed=embed)
     
     
@@ -1912,8 +1843,6 @@ async def media(ctx):
 
     
 bot.run(config.mytoken)
-    
-#bot.run(config.t2)
 
 
 
