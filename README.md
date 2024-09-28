@@ -27,7 +27,7 @@ Building So many FriendShip at one Place, we together
 
 #### For any questions or support, feel free to open an issue on the respective repository or contact us directly 
 
-# Homuess Currency
+# Homies Currency
 
 Homuess Currency is a Discord bot that rewards users with a custom currency based on their activity in the server. The more you talk, the more currency you earn! You can redeem this currency for various rewards, including gifts and real money, helping to boost server engagement and activity.
 
